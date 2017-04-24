@@ -15,12 +15,11 @@ sys.setdefaultencoding('utf-8')
 
 class Bayes(object):
     @classmethod
-    def make_model(cls, clzss):
-        _clzss = clzss.decode('gbk')
+    def make_model(cls, mid):
         try:
-            modelfile = sys.path[0] + '/model/' + Encrypt.hmacmd5(_clzss.encode('utf-8')) + '.txt'  # 模型文件位置
+            modelfile = sys.path[0] + '/model/' + mid + '.txt'  # 模型文件位置
             result = file(modelfile, 'w+')
-            keyword_set = cls.get_keyword(_clzss)
+            keyword_set = cls.get_keyword(mid)
             for label, keyword, newword in keyword_set:
                 words = set(filter(lambda s: s and s.strip(), (str(keyword) + ',' + str(newword)).replace('None', '').split(',')))
                 for word in words:
@@ -33,7 +32,7 @@ class Bayes(object):
             exit(0)
 
     @staticmethod
-    def get_keyword(clzss):
+    def get_keyword(mid):
         try:
             conn = MySQLdb.connect(host=bayes['host'], port=bayes['port'], user=bayes['user'], passwd=bayes['passwd'], db=bayes['db'], charset='utf8')
             cur = conn.cursor()
@@ -43,13 +42,13 @@ class Bayes(object):
                 'FROM '
                 'model '
                 'WHERE '
-                'clzss = "{0}" '
+                'mid = "{0}" '
                 'AND '
                 '('
                 'keyword IS NOT NULL AND keyword != "" '
                 'OR '
                 'newword IS NOT NULL AND newword != ""'
-                ')'.format(clzss)
+                ')'.format(mid)
             ))
             cur.close()
             conn.commit()
