@@ -12,21 +12,25 @@ import re
 import MySQLdb
 import sys
 from ml.util.schemas import *
+from ml.util.encrypt import *
 import traceback
+from sys import argv
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-class Spider(object):
-    def __init__(self, url, name, attr):
-        self._url = url  # 爬取链接
-        self._name = name  # 抓取页面的html标签
-        self._attr = attr  # 抓取页面的html标签属性
+class Baike(object):
+    def __init__(self):
+        self._url = 'http://baike.baidu.com/search/word?word='  # 爬取链接
+        self._name = 'div'  # 抓取页面的html标签
+        self._attr = {'class': 'para'}  # 抓取页面的html标签属性
         self._encoding = 'utf-8'
-        self._pattern = re.compile("[/.,/#@$%^& ]")  # 页面过滤内容
+        self._pattern = re.compile("\w|[/.,/#@$%^&]")  # 页面过滤内容
         self._topK = 30  # 关键词个数
-        self._stopwords = sys.path[0] + '/stopwords.txt'  # 停用词位置
+        self._stopwords = '{0}/stopwords.txt'.format(sys.path[0])  # 停用词位置
+        self._basePath = '{0}/ml/model/'.format(sys.path[7])  # 模型文件存放位置
+        self._keyword = {}
 
     def craw(self, keyword):
         url = self.get_url(keyword)
@@ -60,38 +64,35 @@ class Spider(object):
         stop_words = [line.strip().decode(self._encoding) for line in open(self._stopwords).readlines()]
         return stop_words
 
-    def update(self):
+    def create_file(self, mid, clzss):
+        result = open('{0}.txt'.format(self._basePath + mid), 'a')
+        for label, keyword in self._keyword.items():
+            for word in keyword:
+                result.write('{0} {1}\n'.format(label, word))
+        result.close()
+
+    def save(self, clzss, labels, mid):
         try:
-            conn = MySQLdb.connect(host=spider['host'], port=spider['port'], user=spider['user'], passwd=spider['passwd'], db=spider['db'],
+            _clzss = Encrypt.args_decode(clzss)
+            _label = Encrypt.args_decode(labels)
+            _labels = _label.split(',')
+            conn = MySQLdb.connect(host=demo_web['host'], port=demo_web['port'], user=demo_web['user'], passwd=demo_web['passwd'], db=demo_web['db'],
                                    charset='utf8')
             cur = conn.cursor()
-            result = cur.execute(
-                'SELECT '
-                'id,label '
-                'FROM '
-                'model '
-                'WHERE '
-                'keyword IS NULL '
-                'OR '
-                'keyword = ""'
-            )
-            if result != 0:
-                for id, label in cur.fetchmany(result):
-                    cur.execute(
-                        'UPDATE '
-                        'model '
-                        'SET '
-                        'keyword = "{0}" '
-                        'WHERE id = {1}'.format(self.craw(label), id)
-                    )
+            insert = "INSERT INTO model (label,keyword,clzss,mid) VALUES "
+            for keyword, label in zip(map(lambda x: self.craw(x), _labels), _labels):
+                self._keyword[label] = keyword.split(',')
+                insert += "('{0}','{1}','{2}','{3}'),".format(label, keyword, _clzss, mid)
+            cur.execute(insert[:-1])
             cur.close()
             conn.commit()
             conn.close()
+            self.create_file(mid, clzss)
         except:
             print str(traceback.format_exc())
             exit(0)
 
 
 if __name__ == '__main__':
-    baike = Spider('http://baike.baidu.com/search/word?word=', 'div', {'class': 'para'})
-    baike.update()
+    baike = Baike()
+    baike.save(clzss=argv[1], labels=argv[2], mid=argv[3])

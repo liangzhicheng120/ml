@@ -1,0 +1,12 @@
+VI.C ONCLUSIONS AND FUTURE WORK
+The proposal presented in this paper allows
+customizing the MVC design pattern in order to develop
+a groupware. In this manner, a solution that has been
+attested in countless software problems given the same
+good results has been used. This MVC design pattern
+simplifies the development of groupware, supplying a set
+of items to support this process group. These items
+supply both individual and collective aspects, facilitating
+the appropriate flexibility and responsiveness during the
+evolution of the groupware. Finally, the templates
+generated from MVC design pattern, offer guidelines for

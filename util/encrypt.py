@@ -27,6 +27,10 @@ class Encrypt(object):
         else:
             return ''
 
+    @classmethod
+    def args_decode(self, str):
+        return str.decode('gbk')
+
 
 if __name__ == '__main__':
-    print Encrypt.hmacmd5('新闻')
+    print Encrypt.hmacmd5('学习')

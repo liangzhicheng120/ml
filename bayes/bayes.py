@@ -14,42 +14,33 @@ sys.setdefaultencoding('utf-8')
 
 
 class Bayes(object):
-    @classmethod
-    def make_model(cls, mid):
+    def __init__(self):
+        self._basePath = '{0}/ml/model/'.format(sys.path[7])
+
+    def make_model(self, mid):
+        fileName = '{0}{1}.txt'.format(self._basePath, mid)
+        result = open(fileName, 'w+')
         try:
-            modelfile = sys.path[0] + '/model/' + mid + '.txt'  # 模型文件位置
-            result = file(modelfile, 'w+')
-            keyword_set = cls.get_keyword(mid)
-            for label, keyword, newword in keyword_set:
-                words = set(filter(lambda s: s and s.strip(), (str(keyword) + ',' + str(newword)).replace('None', '').split(',')))
+            keyword_set = self.get_keyword(mid)
+            for label, keyword in keyword_set:
+                # words = set(filter(lambda s: s and s.strip(), (str(keyword) + ',' + str(newword)).replace('None', '').split(',')))
+                words = set(filter(lambda s: s and s.strip(), str(keyword).replace('None', '').split(',')))
                 for word in words:
                     result.write(label + ' ' + word + '\n')
             result.close()
         except:
             result.close()
-            os.remove(modelfile)
+            os.remove(fileName)
             print str(traceback.format_exc())
             exit(0)
 
-    @staticmethod
-    def get_keyword(mid):
+    def get_keyword(self, mid):
         try:
-            conn = MySQLdb.connect(host=bayes['host'], port=bayes['port'], user=bayes['user'], passwd=bayes['passwd'], db=bayes['db'], charset='utf8')
+            conn = MySQLdb.connect(host=demo_web['host'], port=demo_web['port'], user=demo_web['user'], passwd=demo_web['passwd'], db=demo_web['db'],
+                                   charset='utf8')
             cur = conn.cursor()
-            result_set = cur.fetchmany(cur.execute(
-                'SELECT '
-                'label,keyword,newword '
-                'FROM '
-                'model '
-                'WHERE '
-                'mid = "{0}" '
-                'AND '
-                '('
-                'keyword IS NOT NULL AND keyword != "" '
-                'OR '
-                'newword IS NOT NULL AND newword != ""'
-                ')'.format(mid)
-            ))
+            result_set = cur.fetchmany(
+                cur.execute('SELECT label,keyword FROM model WHERE mid = "{0}" AND (keyword IS NOT NULL AND keyword != "")'.format(mid)))
             cur.close()
             conn.commit()
             conn.close()
@@ -60,4 +51,5 @@ class Bayes(object):
 
 
 if __name__ == '__main__':
-    Bayes.make_model(argv[1])
+    bayes = Bayes()
+    bayes.make_model(mid=argv[1])
